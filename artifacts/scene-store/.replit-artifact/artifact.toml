@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "SCENE | متجر الأفلام والألعاب"
+description = "كتالوج عربي للأفلام والألعاب للعرض والتصفح، مع بحث وسلة ومفضلة محلية، بدون دفع أو قاعدة بيانات."
+version = "1.0.0"
+id = "artifacts/scene-store"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21748
+
+[services.development]
+run = "pnpm --filter @workspace/scene-store run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/scene-store", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/scene-store/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21748"
+BASE_PATH = "/"

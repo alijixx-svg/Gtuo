@@ -1,0 +1,176 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: store
+    description: Digital movies and games storefront
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /store/products:
+    get:
+      operationId: listStoreProducts
+      tags: [store]
+      parameters:
+        - { name: category, in: query, schema: { type: string, enum: [all, movie, game] } }
+        - { name: q, in: query, schema: { type: string, maxLength: 120 } }
+        - { name: sort, in: query, schema: { type: string, enum: [popular, price-asc, price-desc, newest] } }
+        - { name: deals, in: query, schema: { type: boolean } }
+      responses:
+        "200":
+          description: Catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/StoreProduct" }
+  /store/products/{id}:
+    get:
+      operationId: getStoreProduct
+      tags: [store]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreProduct" }
+        "404":
+          description: Not found
+  /store/highlights:
+    get:
+      operationId: getStoreHighlights
+      tags: [store]
+      responses:
+        "200":
+          description: Featured products and catalog counts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreHighlights" }
+  /store/checkout:
+    post:
+      operationId: createStoreCheckout
+      tags: [store]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CheckoutInput" }
+      responses:
+        "201":
+          description: Embedded Stripe checkout session
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreCheckout" }
+        "400":
+          description: Invalid cart
+        "503":
+          description: Payment service unavailable
+  /store/checkout/{sessionId}/confirm:
+    post:
+      operationId: confirmStoreCheckout
+      tags: [store]
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Server-verified payment and saved order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreOrder" }
+        "409":
+          description: Payment not yet complete
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    StoreProduct:
+      type: object
+      required: [id, slug, title, titleAr, description, category, genre, price, originalPrice, currency, imageUrl, backdropUrl, year, rating, platform, featured, badge]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        title: { type: string }
+        titleAr: { type: string }
+        description: { type: string }
+        category: { type: string, enum: [movie, game] }
+        genre: { type: string }
+        price: { type: number }
+        originalPrice: { type: number }
+        currency: { type: string }
+        imageUrl: { type: string }
+        backdropUrl: { type: string }
+        year: { type: integer }
+        rating: { type: number }
+        platform: { type: string }
+        featured: { type: boolean }
+        badge: { type: string }
+    StoreHighlights:
+      type: object
+      required: [featured, trending, movieCount, gameCount, dealsCount]
+      properties:
+        featured:
+          type: array
+          items: { $ref: "#/components/schemas/StoreProduct" }
+        trending:
+          type: array
+          items: { $ref: "#/components/schemas/StoreProduct" }
+        movieCount: { type: integer }
+        gameCount: { type: integer }
+        dealsCount: { type: integer }
+    CheckoutInput:
+      type: object
+      required: [productIds]
+      properties:
+        productIds:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items: { type: string, minLength: 1 }
+    StoreCheckout:
+      type: object
+      required: [clientSecret, publishableKey, sessionId, orderId]
+      properties:
+        clientSecret: { type: string }
+        publishableKey: { type: string }
+        sessionId: { type: string }
+        orderId: { type: string }
+    StoreOrder:
+      type: object
+      required: [id, status, total, currency, items, createdAt, testMode]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [paid, pending] }
+        total: { type: number }
+        currency: { type: string }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/StoreProduct" }
+        createdAt: { type: string }
+        testMode: { type: boolean }
+
