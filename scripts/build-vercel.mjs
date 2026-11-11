@@ -10,7 +10,8 @@ const env = {
 };
 
 for (const args of [
-  ["run", "typecheck"],
+  ["run", "typecheck:libs"],
+  ["--filter", "@workspace/scene-store", "run", "typecheck"],
   ["--filter", "@workspace/scene-store", "run", "build"],
 ]) {
   const result = spawnSync("pnpm", args, { env, stdio: "inherit" });

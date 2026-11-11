@@ -8,6 +8,7 @@ test("Vercel serves the showcase as a static single-page app", () => {
   assert.equal(config.framework, null);
   assert.equal(config.outputDirectory, "artifacts/scene-store/dist/public");
   assert.equal(config.functions, undefined);
+  assert.equal(config.git.deploymentEnabled, false);
   assert.equal(config.installCommand, "pnpm install --frozen-lockfile");
   assert.equal(config.buildCommand, "pnpm run build:vercel");
   assert.deepEqual(config.routes, [
@@ -23,5 +24,8 @@ test("static frontend build output exists", async () => {
 test("Vercel build does not compile or initialize the retired API", async () => {
   const source = await readFile(new URL("./build-vercel.mjs", import.meta.url), "utf8");
   assert.match(source, /@workspace\/scene-store/);
+  assert.match(source, /"typecheck:libs"/);
+  assert.match(source, /@workspace\/scene-store", "run", "typecheck"/);
+  assert.doesNotMatch(source, /\["run", "typecheck"\]/);
   assert.doesNotMatch(source, /@workspace\/api-server|STRIPE_|DATABASE_URL/);
 });
